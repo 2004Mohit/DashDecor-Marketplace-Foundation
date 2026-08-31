@@ -1,0 +1,1 @@
+- [Orval/Zod numeric fields](orval-zod-integer-compatibility.md) — prefer compatible number schemas unless integer validation is essential.

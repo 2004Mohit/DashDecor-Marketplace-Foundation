@@ -1,6 +1,6 @@
-# [Project name]
+# DashDecor Marketplace
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+DashDecor is a premium Pune marketplace for sourcing interior and construction materials from trusted local sellers.
 
 ## Run & Operate
 
@@ -22,23 +22,33 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/dashdecor-marketplace` — customer-facing React/Vite storefront and routing.
+- `artifacts/api-server` — shared Express API for catalog, search, product detail, and delivery eligibility.
+- `lib/api-spec/openapi.yaml` — source of truth for public API contracts.
+- `lib/api-client-react` and `lib/api-zod` — generated React Query hooks and Zod schemas.
+- `lib/db/src/schema/catalog.ts` — Drizzle catalog, seller, variant, and inventory schema.
+- `docs/requirements` — uploaded marketplace requirements and product decisions.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The initial storefront runs at `/` and uses the shared `/api` service so preview and future production routing stay path-aware.
+- Catalog discovery is server-backed and contract-first; the storefront uses generated hooks instead of scattering fetch calls through UI components.
+- Seller inventory is stored separately from canonical product data and keyed by location/pincode so multiple warehouses can be added later.
+- DashDecor is a replaceable working brand; the visual identity is contained in the storefront theme and can be swapped without changing domain models.
+- Cashfree, auth, tax, checkout, and role-scoped workflows remain intentionally out of this first foundation slice until their secure server-side contracts are defined.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The first slice supports public catalog discovery, search and filtering, product details with variants/specifications, delivery checks for Pune and Pimpri-Chinchwad, seller and business entry points, and responsive shopping interactions.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+No additional user preferences recorded.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After changing `lib/api-spec/openapi.yaml`, regenerate clients with `pnpm --filter @workspace/api-spec run codegen`.
+- Use the managed artifact workflows for preview; the frontend requires workflow-provided `PORT` and `BASE_PATH`.
 
 ## Pointers
 

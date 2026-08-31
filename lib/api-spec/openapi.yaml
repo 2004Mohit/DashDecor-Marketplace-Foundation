@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DashDecor marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: catalog
+    description: Public catalog and discovery operations
+  - name: delivery
+    description: Delivery eligibility operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,158 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /catalog/highlights:
+    get:
+      operationId: getCatalogHighlights
+      tags: [catalog]
+      summary: Get the public catalog highlights
+      description: Returns the curated homepage catalog content and trust signals.
+      responses:
+        "200":
+          description: Catalog highlights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogHighlights"
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [catalog]
+      summary: List active catalog categories
+      responses:
+        "200":
+          description: Active categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+  /brands:
+    get:
+      operationId: listBrands
+      tags: [catalog]
+      summary: List active catalog brands
+      responses:
+        "200":
+          description: Active brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Brand"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [catalog]
+      summary: Search and browse products
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: brand
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [relevance, price-low, price-high, newest]
+            default: relevance
+        - name: availability
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [all, in-stock, same-day]
+            default: all
+        - name: pincode
+          in: query
+          required: false
+          schema:
+            type: string
+            pattern: "^[0-9]{6}$"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: number
+            minimum: 1
+            maximum: 48
+            default: 12
+      responses:
+        "200":
+          description: Product search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSearchResult"
+  /products/{slug}:
+    get:
+      operationId: getProduct
+      tags: [catalog]
+      summary: Get a product detail page
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /delivery/serviceability:
+    post:
+      operationId: checkServiceability
+      tags: [delivery]
+      summary: Check delivery serviceability for a pincode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceabilityInput"
+      responses:
+        "200":
+          description: Delivery eligibility
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceabilityResult"
+        "400":
+          description: Invalid pincode
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +189,228 @@ components:
           type: string
       required:
         - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        productCount:
+          type: number
+        imageUrl:
+          type: string
+      required: [id, name, slug, description, productCount, imageUrl]
+    Brand:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        slug:
+          type: string
+        productCount:
+          type: number
+      required: [id, name, slug, productCount]
+    ProductCard:
+      type: object
+      properties:
+        id:
+          type: string
+        slug:
+          type: string
+        name:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        categorySlug:
+          type: string
+        imageUrl:
+          type: string
+        price:
+          type: number
+        unit:
+          type: string
+        compareAtPrice:
+          type: ["number", "null"]
+        rating:
+          type: number
+        reviewCount:
+          type: number
+        inStock:
+          type: boolean
+        sameDayEligible:
+          type: boolean
+        badge:
+          type: ["string", "null"]
+      required:
+        - id
+        - slug
+        - name
+        - brand
+        - category
+        - categorySlug
+        - imageUrl
+        - price
+        - unit
+        - compareAtPrice
+        - rating
+        - reviewCount
+        - inStock
+        - sameDayEligible
+        - badge
+    ProductSearchResult:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductCard"
+        total:
+          type: number
+        page:
+              type: number
+        pageSize:
+              type: number
+        facets:
+          $ref: "#/components/schemas/ProductFacets"
+      required: [products, total, page, pageSize, facets]
+    ProductFacets:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        brands:
+          type: array
+          items:
+            $ref: "#/components/schemas/Brand"
+        price:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+          required: [min, max]
+      required: [categories, brands, price]
+    Product:
+      allOf:
+        - $ref: "#/components/schemas/ProductCard"
+        - type: object
+          properties:
+            description:
+              type: string
+            specifications:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductSpecification"
+            variants:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductVariant"
+            faqs:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductFaq"
+            seller:
+              $ref: "#/components/schemas/SellerSummary"
+          required: [description, specifications, variants, faqs, seller]
+    ProductSpecification:
+      type: object
+      properties:
+        label:
+          type: string
+        value:
+          type: string
+      required: [label, value]
+    ProductVariant:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        value:
+          type: string
+        price:
+          type: number
+        inStock:
+          type: boolean
+      required: [id, label, value, price, inStock]
+    ProductFaq:
+      type: object
+      properties:
+        question:
+          type: string
+        answer:
+          type: string
+      required: [question, answer]
+    SellerSummary:
+      type: object
+      properties:
+        name:
+          type: string
+        verified:
+          type: boolean
+        city:
+          type: string
+      required: [name, verified, city]
+    CatalogHighlights:
+      type: object
+      properties:
+        featuredProducts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductCard"
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+        trustSignals:
+          type: array
+          items:
+            type: string
+        serviceArea:
+          type: string
+      required: [featuredProducts, categories, trustSignals, serviceArea]
+    ServiceabilityInput:
+      type: object
+      properties:
+        pincode:
+          type: string
+          pattern: "^[0-9]{6}$"
+        productSlug:
+          type: ["string", "null"]
+      required: [pincode]
+    ServiceabilityResult:
+      type: object
+      properties:
+        pincode:
+          type: string
+        serviceable:
+          type: boolean
+        city:
+          type: ["string", "null"]
+        message:
+          type: string
+        sameDayEligible:
+          type: boolean
+        estimatedDays:
+          type: ["number", "null"]
+      required: [pincode, serviceable, city, message, sameDayEligible, estimatedDays]
 
