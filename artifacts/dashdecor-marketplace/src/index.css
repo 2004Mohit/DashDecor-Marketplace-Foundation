@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @plugin "@tailwindcss/typography";
@@ -79,43 +79,44 @@
   --elevate-1: rgba(0, 0, 0, 0.03);
   --elevate-2: rgba(0, 0, 0, 0.08);
 
-  --background: 37 31% 93%;
-  --foreground: 220 23% 19%;
-  --border: 35 18% 82%;
-  --card: 39 35% 97%;
-  --card-foreground: 220 23% 19%;
-  --card-border: 35 18% 82%;
-  --sidebar: 221 23% 19%;
-  --sidebar-foreground: 38 35% 93%;
-  --sidebar-border: 220 18% 29%;
-  --sidebar-primary: 12 49% 49%;
-  --sidebar-primary-foreground: 38 35% 97%;
-  --sidebar-accent: 174 47% 28%;
-  --sidebar-accent-foreground: 38 35% 97%;
-  --sidebar-ring: 35 18% 82%;
-  --popover: 39 35% 97%;
-  --popover-foreground: 220 23% 19%;
-  --popover-border: 35 18% 82%;
-  --primary: 12 49% 49%;
-  --primary-foreground: 38 35% 97%;
-  --secondary: 174 47% 28%;
-  --secondary-foreground: 38 35% 97%;
-  --muted: 37 23% 88%;
-  --muted-foreground: 220 12% 46%;
-  --accent: 39 58% 70%;
-  --accent-foreground: 220 23% 19%;
-  --destructive: 2 62% 43%;
-  --destructive-foreground: 38 35% 97%;
-  --input: 35 18% 82%;
-  --ring: 12 49% 49%;
-  --chart-1: 12 49% 49%;
-  --chart-2: 174 47% 28%;
-  --chart-3: 39 58% 70%;
-  --chart-4: 220 23% 34%;
-  --chart-5: 37 31% 67%;
+  /* DashDecor bright premium palette — keep all brand changes here. */
+  --background: 48 33% 97%; /* #FAF9F5 warm ivory */
+  --foreground: 0 0% 9%; /* #171717 charcoal */
+  --border: 48 18% 89%; /* #E8E6DF */
+  --card: 0 0% 100%; /* #FFFFFF */
+  --card-foreground: 0 0% 9%;
+  --card-border: 48 18% 89%;
+  --sidebar: 0 0% 9%;
+  --sidebar-foreground: 48 33% 97%;
+  --sidebar-border: 0 0% 20%;
+  --sidebar-primary: 230 100% 60%; /* #3157FF cobalt */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 80 82% 68%; /* #C8F169 fresh lime */
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-ring: 230 100% 60%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 9%;
+  --popover-border: 48 18% 89%;
+  --primary: 230 100% 60%; /* #3157FF cobalt */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 225 39% 22%; /* deep architectural navy */
+  --secondary-foreground: 48 33% 97%;
+  --muted: 48 24% 94%;
+  --muted-foreground: 0 0% 42%; /* #6B6B6B */
+  --accent: 80 82% 68%; /* #C8F169 fresh lime */
+  --accent-foreground: 0 0% 9%;
+  --destructive: 2 70% 47%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 48 18% 89%;
+  --ring: 230 100% 60%;
+  --chart-1: 230 100% 60%;
+  --chart-2: 225 39% 22%;
+  --chart-3: 80 82% 68%;
+  --chart-4: 0 0% 42%;
+  --chart-5: 48 24% 72%;
 
   --app-font-sans: 'Manrope', sans-serif;
-  --app-font-serif: 'Playfair Display', Georgia, serif;
+  --app-font-serif: 'Manrope', sans-serif;
   --app-font-mono: 'DM Mono', monospace;
   --radius: 0.35rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0); /*replace with H S L */
@@ -201,40 +202,40 @@
   --elevate-1: rgba(255, 255, 255, 0.04);
   --elevate-2: rgba(255, 255, 255, 0.09);
 
-  --background: 220 23% 13%;
-  --foreground: 38 35% 93%;
-  --border: 220 17% 27%;
-  --card: 220 20% 17%;
-  --card-foreground: 38 35% 93%;
-  --card-border: 220 17% 27%;
-  --sidebar: 220 24% 10%;
-  --sidebar-foreground: 38 35% 93%;
-  --sidebar-border: 220 17% 22%;
-  --sidebar-primary: 12 55% 57%;
-  --sidebar-primary-foreground: 220 23% 13%;
-  --sidebar-accent: 174 43% 36%;
-  --sidebar-accent-foreground: 38 35% 93%;
-  --sidebar-ring: 35 18% 36%;
-  --popover: 220 20% 17%;
-  --popover-foreground: 38 35% 93%;
-  --popover-border: 220 17% 27%;
-  --primary: 12 55% 57%;
-  --primary-foreground: 220 23% 13%;
-  --secondary: 174 43% 36%;
-  --secondary-foreground: 38 35% 93%;
-  --muted: 220 18% 23%;
-  --muted-foreground: 38 14% 68%;
-  --accent: 39 51% 54%;
-  --accent-foreground: 220 23% 13%;
-  --destructive: 2 62% 55%;
-  --destructive-foreground: 38 35% 93%;
-  --input: 220 17% 31%;
-  --ring: 12 55% 57%;
-  --chart-1: 12 55% 57%;
-  --chart-2: 174 43% 36%;
-  --chart-3: 39 51% 54%;
-  --chart-4: 38 35% 80%;
-  --chart-5: 220 12% 50%;
+  --background: 225 24% 9%;
+  --foreground: 60 33% 96%;
+  --border: 221 22% 24%;
+  --card: 220 28% 15%;
+  --card-foreground: 60 33% 96%;
+  --card-border: 221 22% 24%;
+  --sidebar: 220 29% 8%;
+  --sidebar-foreground: 60 33% 96%;
+  --sidebar-border: 221 22% 19%;
+  --sidebar-primary: 230 100% 66%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 80 82% 68%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-ring: 230 100% 66%;
+  --popover: 220 28% 15%;
+  --popover-foreground: 60 33% 96%;
+  --popover-border: 221 22% 24%;
+  --primary: 230 100% 66%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 223 35% 24%;
+  --secondary-foreground: 60 33% 96%;
+  --muted: 222 20% 18%;
+  --muted-foreground: 220 15% 72%;
+  --accent: 80 82% 68%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 2 70% 58%;
+  --destructive-foreground: 60 33% 96%;
+  --input: 221 22% 29%;
+  --ring: 230 100% 66%;
+  --chart-1: 230 100% 66%;
+  --chart-2: 223 35% 24%;
+  --chart-3: 80 82% 68%;
+  --chart-4: 60 33% 83%;
+  --chart-5: 220 15% 52%;
 
   --shadow-2xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
   --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
@@ -276,7 +277,8 @@
     background-size: 28px 28px;
   }
   .material-image {
-    background: linear-gradient(135deg, hsl(var(--secondary) / 0.14), hsl(var(--accent) / 0.26));
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--accent) / 0.3));
+    box-shadow: inset 0 0 0 1px hsl(var(--border) / 0.7);
   }
 }
 
@@ -297,7 +299,7 @@
 .skeleton-pulse { animation: soft-pulse 1.6s ease-in-out infinite; }
 
 button, a, input, select, textarea { transition: color .2s ease, background-color .2s ease, border-color .2s ease, opacity .2s ease, transform .2s ease; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid hsl(var(--accent) / .75); outline-offset: 3px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid hsl(var(--primary) / .55); outline-offset: 3px; }
 
 /**
  * Using the elevate system.

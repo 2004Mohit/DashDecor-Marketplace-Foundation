@@ -35,6 +35,7 @@ DashDecor is a premium Pune marketplace for sourcing interior and construction m
 - Catalog discovery is server-backed and contract-first; the storefront uses generated hooks instead of scattering fetch calls through UI components.
 - Seller inventory is stored separately from canonical product data and keyed by location/pincode so multiple warehouses can be added later.
 - DashDecor is a replaceable working brand; the visual identity is contained in the storefront theme and can be swapped without changing domain models.
+- The storefront's light theme is intentionally bright and commerce-oriented: warm ivory/white surfaces, cobalt primary actions, controlled lime highlights, and a separately tuned charcoal dark theme.
 - Cashfree, auth, tax, checkout, and role-scoped workflows remain intentionally out of this first foundation slice until their secure server-side contracts are defined.
 
 ## Product

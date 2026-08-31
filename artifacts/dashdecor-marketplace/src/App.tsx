@@ -64,7 +64,7 @@ function ProductImage({ product, large = false }: { product: ProductCard | Produ
       <img
         src={product.imageUrl}
         alt={product.name}
-        className="relative z-10 h-full w-full object-cover mix-blend-multiply"
+        className="relative z-10 h-full w-full object-cover mix-blend-multiply dark:mix-blend-normal"
         loading={large ? 'eager' : 'lazy'}
         onError={(event) => { event.currentTarget.style.display = 'none'; }}
       />
@@ -84,7 +84,7 @@ function ProductCardView({ product }: { product: ProductCard }) {
       <Link href={`/product/${product.slug}`} className="block" data-testid={`link-product-${product.id}`}>
         <div className="relative overflow-hidden">
           <ProductImage product={product} />
-          {product.badge && <span className="absolute left-3 top-3 z-20 bg-secondary px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.11em] text-secondary-foreground">{product.badge}</span>}
+          {product.badge && <span className={`absolute left-3 top-3 z-20 px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.11em] ${/new|best value|fast delivery|special offer/i.test(product.badge) ? 'bg-accent text-accent-foreground' : 'bg-secondary text-secondary-foreground'}`}>{product.badge}</span>}
           <span className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center bg-card/90 text-foreground opacity-0 group-hover:opacity-100 group-focus-within:opacity-100">
             <ArrowRight className="h-4 w-4 -rotate-45" aria-hidden="true" />
           </span>

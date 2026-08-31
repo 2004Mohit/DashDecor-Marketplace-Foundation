@@ -1,0 +1,411 @@
+# DESIGN UPDATE — BRIGHT PREMIUM COLOR SYSTEM
+
+The current project foundation is already implemented.
+
+I want to revise the visual color direction before continuing with backend/database development.
+
+## Reference
+
+Use the visual energy and bright commerce feel of:
+
+https://www.fixxly.in/
+
+However:
+
+**DO NOT COPY FIXXLY.**
+
+Do not reproduce its:
+
+* Color palette
+* Branding
+* Logo
+* Layout
+* UI components
+* Exact visual style
+
+Use it only as inspiration for creating a bright, energetic, modern commerce experience.
+
+---
+
+# NEW DESIGN DIRECTION
+
+The previous design is too dark/heavy for what I want.
+
+Change the visual direction to:
+
+**Bright + Premium + Modern + Interior-focused**
+
+The website should feel:
+
+* Bright
+* Fresh
+* Premium
+* Modern
+* Confident
+* Clean
+* High-quality
+* Commerce-oriented
+* Visually memorable
+
+It should NOT feel:
+
+* Dark
+* Dull
+* Corporate
+* Generic
+* Overly luxurious
+* Gold-heavy
+* Like a copy of Fixxly
+
+---
+
+# COLOR PALETTE
+
+Use this as the starting design system:
+
+### Primary
+
+```text
+Cobalt Blue
+#3157FF
+```
+
+Use for:
+
+* Primary buttons
+* Important CTAs
+* Active navigation
+* Links
+* Selected states
+* Important interactive elements
+
+### Accent
+
+```text
+Fresh Lime / Chartreuse
+#C8F169
+```
+
+Use selectively for:
+
+* Highlights
+* Small badges
+* Promotional elements
+* Important visual accents
+* Product/deal highlights
+* Decorative details
+
+Do NOT flood the entire UI with lime.
+
+### Main Background
+
+```text
+Warm Ivory
+#FAF9F5
+```
+
+Use as the primary light-mode page background.
+
+### Surface
+
+```text
+White
+#FFFFFF
+```
+
+Use for:
+
+* Product cards
+* Panels
+* Forms
+* Dropdowns
+* Modals
+* Navigation surfaces where appropriate
+
+### Primary Text
+
+```text
+Charcoal
+#171717
+```
+
+### Secondary Text
+
+```text
+#6B6B6B
+```
+
+### Border
+
+```text
+#E8E6DF
+```
+
+---
+
+# IMPORTANT
+
+Do not blindly apply these colors everywhere.
+
+Create a proper design-token system so the palette can be changed later from a central location.
+
+For example:
+
+```text
+--color-primary
+--color-primary-hover
+--color-accent
+--color-background
+--color-surface
+--color-text
+--color-text-muted
+--color-border
+```
+
+If the current project uses another token architecture, adapt it rather than creating duplicate systems.
+
+---
+
+# LIGHT MODE
+
+Light Mode should be the primary/default experience.
+
+Visual direction:
+
+```text
+Warm Ivory background
++
+White surfaces
++
+Cobalt interactive elements
++
+Small Lime highlights
++
+Dark charcoal typography
+```
+
+The result should feel bright and premium.
+
+Avoid excessive shadows.
+
+Prefer:
+
+* Clean borders
+* Soft elevation
+* Large whitespace
+* Strong typography
+* High-quality imagery
+* Subtle depth
+
+---
+
+# DARK MODE
+
+Keep Dark Mode supported.
+
+Do NOT simply invert the light theme.
+
+Create a separately designed dark theme using the same brand identity.
+
+Suggested direction:
+
+```text
+Deep charcoal background
++
+Dark elevated surfaces
++
+Cobalt primary
++
+Controlled lime accents
++
+Warm/light typography
+```
+
+The dark theme should still feel premium and polished.
+
+---
+
+# INTERIOR DESIGN CHARACTER
+
+Even though the palette is bright, the website must still feel connected to:
+
+* Interior materials
+* Furniture
+* Architecture
+* Construction materials
+* Premium homes
+* Professional buyers
+* Interior designers
+* Contractors
+
+Use product photography and whitespace to maintain the premium interior character.
+
+The colors should enhance the products rather than compete with product images.
+
+---
+
+# HOMEPAGE
+
+Review the existing homepage styling and update it to match the new direction.
+
+Pay particular attention to:
+
+* Header
+* Search bar
+* Navigation
+* Hero section
+* Category cards
+* Product cards
+* CTA buttons
+* Badges
+* Promotional sections
+* Footer
+
+The homepage should feel like a **modern interior materials marketplace**, not a generic SaaS dashboard.
+
+---
+
+# PRODUCT CARDS
+
+Product cards should remain visually clean.
+
+Preferred structure:
+
+```text
+Product Image
+
+Badge / Highlight
+Brand
+Product Name
+Key Attributes
+Price
+Availability
+CTA
+```
+
+Use cobalt primarily for interaction.
+
+Use lime only for selected highlights such as:
+
+```text
+NEW
+BEST VALUE
+FAST DELIVERY
+SPECIAL OFFER
+```
+
+Do not make every badge lime.
+
+---
+
+# BUTTONS
+
+Primary button:
+
+```text
+Cobalt background
+White text
+```
+
+Secondary button:
+
+```text
+White / transparent
+Cobalt border
+Cobalt text
+```
+
+Accent button may be used selectively:
+
+```text
+Lime background
+Dark text
+```
+
+Do not make every CTA a different color.
+
+Maintain a clear hierarchy.
+
+---
+
+# TYPOGRAPHY
+
+Keep typography modern and highly readable.
+
+Prioritize:
+
+* Strong headings
+* Clean body text
+* Clear price hierarchy
+* Good spacing
+* Excellent mobile readability
+
+Avoid decorative fonts that reduce usability.
+
+---
+
+# COLOR ACCESSIBILITY
+
+Verify sufficient contrast.
+
+Do not use lime text on white.
+
+Do not use low-contrast gray text for important information.
+
+Interactive elements must remain clearly identifiable.
+
+---
+
+# RESPONSIVE DESIGN
+
+The new color system must work consistently on:
+
+* Mobile
+* Tablet
+* Desktop
+
+Do not create separate unrelated visual systems for mobile and desktop.
+
+---
+
+# DO NOT CHANGE
+
+Do NOT change:
+
+* Database architecture
+* Supabase architecture
+* Authentication architecture
+* Business rules
+* Product workflow
+* Seller workflow
+* Inventory model
+* B2B requirements
+* Tax requirements
+* Payment requirements
+* Delivery requirements
+* SEO architecture
+
+This task is ONLY a visual/design-system refinement.
+
+---
+
+# ACCEPTANCE CRITERIA
+
+Before finishing:
+
+1. Light Mode visibly uses the new bright palette.
+2. Dark Mode remains intentionally designed.
+3. Cobalt is the primary interactive color.
+4. Lime is used as a controlled accent.
+5. Warm ivory provides the main light background.
+6. Product imagery remains visually dominant.
+7. The result feels premium but bright.
+8. The design does not look like a Fixxly clone.
+9. Colors are implemented through centralized design tokens.
+10. Existing application functionality continues working.
+11. No TypeScript/build errors are introduced.
+12. No unnecessary dependencies are added.
+
+After completing this change, stop.
+
+Do not begin the next development phase.
