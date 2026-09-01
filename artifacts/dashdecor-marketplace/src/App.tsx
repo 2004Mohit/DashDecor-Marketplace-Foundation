@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, Route, Switch, Router as WouterRouter, useLocation, useParams } from 'wouter';
-import { Heart, Search, ShoppingBag, UserRound, ArrowRight, Check, Menu, X, ChevronDown, ChevronUp, SlidersHorizontal, MapPin, Sparkles, RotateCcw, CircleAlert, LoaderCircle, BadgeCheck, Star } from 'lucide-react';
+import { Heart, Search, ShoppingBag, UserRound, ArrowRight, Check, Menu, X, ChevronDown, ChevronUp, SlidersHorizontal, MapPin, Sparkles, RotateCcw, CircleAlert, LoaderCircle, BadgeCheck, Star, Moon, Sun } from 'lucide-react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { getHealthCheckQueryKey, useGetCatalogHighlights, useGetProduct, useHealthCheck, useListBrands, useListCategories, useListProducts, useCheckServiceability } from '@workspace/api-client-react';
-import type { Category, Product, ProductCard } from '@workspace/api-client-react';
+import { getHealthCheckQueryKey, getListProductsQueryKey, useGetCatalogHighlights, useGetProduct, useHealthCheck, useListBrands, useListCategories, useListProducts, useCheckServiceability } from '@workspace/api-client-react';
+import type { Brand, Category, Product, ProductCard } from '@workspace/api-client-react';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { AuthRequiredDialog } from '@/components/auth-required-dialog';
+import { AuthProvider, useAuth } from '@/lib/auth';
+import { ThemeProvider, useTheme } from '@/lib/theme';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
@@ -32,6 +35,9 @@ function Logo({ onDark = false }: { onDark?: boolean }) {
 function SearchBar({ initialValue = '', compact = false }: { initialValue?: string; compact?: boolean }) {
   const [, setLocation] = useLocation();
   const [value, setValue] = useState(initialValue);
+  useEffect(() => {
+    setValue(initialValue);
+  }, [initialValue]);
   const submit = (event: FormEvent) => {
     event.preventDefault();
     setLocation(`/catalog${value.trim() ? `?q=${encodeURIComponent(value.trim())}` : ''}`);
@@ -67,9 +73,10 @@ function ProductImage({ product, large = false }: { product: ProductCard | Produ
         className="relative z-10 h-full w-full object-cover mix-blend-multiply dark:mix-blend-normal"
         loading={large ? 'eager' : 'lazy'}
         onError={(event) => { event.currentTarget.style.display = 'none'; }}
+        data-testid={`img-product-${product.id}`}
       />
       {product.sameDayEligible && (
-        <span className="absolute bottom-3 left-3 z-20 bg-card/90 px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.12em] text-secondary">
+        <span className="absolute bottom-3 left-3 z-20 bg-card/90 px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.12em] text-secondary" data-testid={`status-same-day-${product.id}`}>
           same day · Pune
         </span>
       )}
@@ -78,7 +85,21 @@ function ProductImage({ product, large = false }: { product: ProductCard | Produ
 }
 
 function ProductCardView({ product }: { product: ProductCard }) {
+  const { isAuthenticated, requireAuth } = useAuth();
   const [saved, setSaved] = useState(false);
+  const toggleSaved = () => {
+    if (!isAuthenticated) {
+      requireAuth('wishlist');
+      return;
+    }
+    setSaved((current) => !current);
+  };
+  const addToBag = () => {
+    if (!isAuthenticated) {
+      requireAuth('bag', `/product/${product.slug}`);
+      return;
+    }
+  };
   return (
     <article className="group relative min-w-0" data-testid={`card-product-${product.id}`}>
       <Link href={`/product/${product.slug}`} className="block" data-testid={`link-product-${product.id}`}>
@@ -91,20 +112,28 @@ function ProductCardView({ product }: { product: ProductCard }) {
         </div>
         <div className="pt-4">
           <p className="font-mono-ui text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{product.brand} / {product.category}</p>
-          <h3 className="mt-2 min-h-[44px] text-[15px] font-bold leading-snug tracking-[-0.02em] group-hover:text-primary">{product.name}</h3>
+           <h3 className="mt-2 min-h-[44px] text-[15px] font-bold leading-snug tracking-[-0.02em] group-hover:text-primary" data-testid={`text-product-name-${product.id}`}>{product.name}</h3>
           <div className="mt-3 flex items-end justify-between gap-2">
             <div>
-              <span className="text-[16px] font-extrabold">{money(product.price)}</span>
+               <span className="text-[16px] font-extrabold" data-testid={`text-product-price-${product.id}`}>{money(product.price)}</span>
               <span className="ml-1 text-xs text-muted-foreground">/ {product.unit}</span>
               {product.compareAtPrice && <span className="ml-2 text-xs text-muted-foreground line-through">{money(product.compareAtPrice)}</span>}
             </div>
-            <span className="flex items-center gap-1 font-mono-ui text-[10px] text-accent-foreground"><Star className="h-3 w-3 fill-accent-foreground" /> {product.rating.toFixed(1)} ({product.reviewCount})</span>
+             <span className="flex items-center gap-1 font-mono-ui text-[10px] text-accent-foreground" data-testid={`text-product-rating-${product.id}`}><Star className="h-3 w-3 fill-accent-foreground" /> {product.rating.toFixed(1)} ({product.reviewCount})</span>
           </div>
+           <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
+             <span className={`font-mono-ui text-[9px] uppercase tracking-[0.1em] ${product.inStock ? 'text-secondary' : 'text-muted-foreground'}`} data-testid={`status-product-availability-${product.id}`}>
+               {product.inStock ? 'Available' : 'Currently unavailable'}
+             </span>
+             <button type="button" onClick={addToBag} disabled={!product.inStock} className="inline-flex h-9 items-center gap-2 bg-primary px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40" data-testid={`button-add-to-bag-${product.id}`}>
+               <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" /> Add to bag
+             </button>
+           </div>
         </div>
       </Link>
       <button
         type="button"
-        onClick={() => setSaved(!saved)}
+        onClick={toggleSaved}
         className={`absolute right-2 top-2 z-30 flex h-8 w-8 items-center justify-center border ${saved ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card/90 text-foreground hover:border-primary hover:text-primary'}`}
         aria-label={saved ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
         data-testid={`button-wishlist-${product.id}`}
@@ -156,10 +185,45 @@ function HealthStatus() {
   return <span className="hidden items-center gap-2 font-mono-ui text-[9px] uppercase tracking-[0.13em] text-muted-foreground md:flex" data-testid="status-api"><span className={`h-1.5 w-1.5 rounded-full ${live ? 'bg-secondary' : 'bg-accent'}`} /> {live ? 'catalog live' : 'catalog syncing'}</span>;
 }
 
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return <button type="button" onClick={toggleTheme} className="hidden h-10 w-10 items-center justify-center hover:bg-muted sm:flex" aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} data-testid="button-theme-toggle">
+    {theme === 'light' ? <Moon className="h-[17px] w-[17px]" aria-hidden="true" /> : <Sun className="h-[17px] w-[17px]" aria-hidden="true" />}
+  </button>;
+}
+
+function PincodeQuickCheck() {
+  const [, setLocation] = useLocation();
+  const [open, setOpen] = useState(false);
+  const [pincode, setPincode] = useState('');
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (/^[0-9]{6}$/.test(pincode)) {
+      setOpen(false);
+      setLocation(`/catalog?pincode=${pincode}`);
+    }
+  };
+  return <div className="relative hidden md:block">
+    <button type="button" onClick={() => setOpen((current) => !current)} className="flex h-10 items-center gap-2 px-2 text-left hover:bg-muted" aria-expanded={open} aria-controls="pincode-quick-check" data-testid="button-pincode-location">
+      <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
+      <span><span className="block font-mono-ui text-[8px] uppercase tracking-[0.1em] text-muted-foreground">Deliver to</span><span className="block text-[11px] font-bold">Pune & PCMC</span></span>
+      {open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
+    </button>
+    {open && <div id="pincode-quick-check" className="absolute right-0 top-12 z-50 w-72 border border-border bg-card p-4 shadow-lg" data-testid="popover-pincode-location">
+      <p className="font-mono-ui text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Filter by delivery area</p>
+      <p className="mt-2 text-sm font-bold">See materials available near you.</p>
+      <form onSubmit={submit} className="mt-4 flex gap-2">
+        <input inputMode="numeric" maxLength={6} value={pincode} onChange={(event) => setPincode(event.target.value.replace(/\D/g, ''))} placeholder="6-digit pincode" aria-label="Delivery pincode" className="h-10 min-w-0 flex-1 border border-border bg-background px-3 text-xs outline-none focus:border-primary" data-testid="input-header-pincode" />
+        <button type="submit" disabled={pincode.length !== 6} className="h-10 bg-primary px-3 text-[10px] font-bold uppercase tracking-[0.08em] text-primary-foreground disabled:opacity-40" data-testid="button-header-pincode">Show</button>
+      </form>
+    </div>}
+  </div>;
+}
+
 function Shell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [bagOpen, setBagOpen] = useState(false);
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { requireAuth } = useAuth();
   return (
     <div className="min-h-[100dvh] bg-background">
       <div className="border-b border-border bg-secondary px-4 py-2 text-center font-mono-ui text-[9px] uppercase tracking-[0.15em] text-secondary-foreground">Serving Pune & Pimpri-Chinchwad · verified materials, closer to home</div>
@@ -172,14 +236,17 @@ function Shell({ children }: { children: ReactNode }) {
             <Link href="/sell" className={location === '/sell' ? 'text-primary' : 'hover:text-primary'} data-testid="link-nav-sell">Sell with us</Link>
           </nav>
           <div className="ml-auto hidden w-full max-w-[330px] md:block"><SearchBar compact /></div>
+          <PincodeQuickCheck />
           <HealthStatus />
           <div className="flex items-center gap-1">
-            <Link href="/account" className="flex h-10 w-10 items-center justify-center hover:bg-muted" aria-label="Open account" data-testid="link-account"><UserRound className="h-[18px] w-[18px]" aria-hidden="true" /></Link>
-            <div className="relative"><button type="button" onClick={() => setBagOpen(!bagOpen)} className="relative flex h-10 w-10 items-center justify-center hover:bg-muted" aria-label="Open shopping bag" data-testid="button-cart"><ShoppingBag className="h-[18px] w-[18px]" aria-hidden="true" /><span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center bg-primary px-1 font-mono-ui text-[8px] text-primary-foreground">0</span></button>{bagOpen && <div className="absolute right-0 top-12 z-50 w-64 border border-border bg-card p-4 shadow-lg" role="status" data-testid="status-empty-bag"><p className="font-mono-ui text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Your bag / 00</p><p className="mt-3 text-sm font-bold">A quiet bag, for now.</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Save or add a material and it will wait here for you.</p><Link href="/catalog" onClick={() => setBagOpen(false)} className="mt-4 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-primary" data-testid="link-empty-bag">Browse materials <ArrowRight className="h-3 w-3" /></Link></div>}</div>
+            <button type="button" onClick={() => requireAuth('wishlist', location)} className="hidden h-10 w-10 items-center justify-center hover:bg-muted sm:flex" aria-label="Open wishlist" data-testid="button-header-wishlist"><Heart className="h-[18px] w-[18px]" aria-hidden="true" /></button>
+            <button type="button" onClick={() => requireAuth('account', location)} className="flex h-10 w-10 items-center justify-center hover:bg-muted" aria-label="Open account" data-testid="button-account"><UserRound className="h-[18px] w-[18px]" aria-hidden="true" /></button>
+            <button type="button" onClick={() => setLocation('/cart')} className="relative flex h-10 w-10 items-center justify-center hover:bg-muted" aria-label="Open shopping cart" data-testid="button-cart"><ShoppingBag className="h-[18px] w-[18px]" aria-hidden="true" /><span className="absolute right-1 top-1 flex h-3.5 min-w-3.5 items-center justify-center bg-primary px-1 font-mono-ui text-[8px] text-primary-foreground">0</span></button>
+            <ThemeToggle />
             <button type="button" className="flex h-10 w-10 items-center justify-center lg:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? 'Close navigation' : 'Open navigation'} data-testid="button-mobile-menu">{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
           </div>
         </div>
-        {menuOpen && <div className="border-t border-border bg-card px-5 py-5 lg:hidden"><div className="grid gap-4 text-sm font-bold"><Link href="/catalog" onClick={() => setMenuOpen(false)} data-testid="link-mobile-catalog">Shop materials</Link><Link href="/business" onClick={() => setMenuOpen(false)} data-testid="link-mobile-business">For business</Link><Link href="/sell" onClick={() => setMenuOpen(false)} data-testid="link-mobile-sell">Sell with us</Link><div className="pt-2"><SearchBar compact /></div></div></div>}
+         {menuOpen && <div className="border-t border-border bg-card px-5 py-5 lg:hidden"><div className="grid gap-4 text-sm font-bold"><Link href="/catalog" onClick={() => setMenuOpen(false)} data-testid="link-mobile-catalog">Shop materials</Link><Link href="/business" onClick={() => setMenuOpen(false)} data-testid="link-mobile-business">For business</Link><Link href="/sell" onClick={() => setMenuOpen(false)} data-testid="link-mobile-sell">Sell with us</Link><button type="button" onClick={() => { setMenuOpen(false); requireAuth('account', location); }} className="text-left" data-testid="button-mobile-account">Account / sign in</button><div className="pt-2"><SearchBar compact /></div></div></div>}
       </header>
       {children}
       <Footer />
@@ -189,12 +256,13 @@ function Shell({ children }: { children: ReactNode }) {
 
 function Footer() {
   const [helpOpen, setHelpOpen] = useState(false);
+  const { requireAuth } = useAuth();
   return (
     <footer className="mt-24 border-t border-border bg-sidebar text-sidebar-foreground">
       <div className="mx-auto grid max-w-[1440px] gap-12 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr] lg:px-10">
         <div><Logo onDark /><p className="mt-5 max-w-xs text-sm leading-6 text-sidebar-foreground/65">A considered material library for the places Pune calls home.</p><span className="mt-8 block font-mono-ui text-[9px] uppercase tracking-[0.14em] text-sidebar-foreground/45">DD / 01—PUNE</span></div>
         <div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/45">Explore</p><div className="mt-4 grid gap-3 text-sm"><Link href="/catalog" className="hover:text-primary" data-testid="link-footer-catalog">All materials</Link><Link href="/catalog?availability=same-day" className="hover:text-primary" data-testid="link-footer-sameday">Same-day in Pune</Link><Link href="/business" className="hover:text-primary" data-testid="link-footer-business">Trade desk</Link></div></div>
-        <div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/45">Work with us</p><div className="mt-4 grid gap-3 text-sm"><Link href="/sell" className="hover:text-primary" data-testid="link-footer-sell">Become a seller</Link><Link href="/account" className="hover:text-primary" data-testid="link-footer-account">Your account</Link><button type="button" onClick={() => setHelpOpen(!helpOpen)} className="w-fit text-left hover:text-primary" aria-expanded={helpOpen} data-testid="button-footer-help">Delivery & support</button>{helpOpen && <p className="max-w-[190px] text-xs leading-5 text-sidebar-foreground/60" data-testid="text-footer-help">Pune delivery questions? Send your pincode through a product page and we’ll show the quickest route.</p>}</div></div>
+        <div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/45">Work with us</p><div className="mt-4 grid gap-3 text-sm"><Link href="/sell" className="hover:text-primary" data-testid="link-footer-sell">Become a seller</Link><button type="button" onClick={() => requireAuth('account', '/')} className="w-fit text-left hover:text-primary" data-testid="button-footer-account">Your account</button><button type="button" onClick={() => setHelpOpen(!helpOpen)} className="w-fit text-left hover:text-primary" aria-expanded={helpOpen} data-testid="button-footer-help">Delivery & support</button>{helpOpen && <p className="max-w-[190px] text-xs leading-5 text-sidebar-foreground/60" data-testid="text-footer-help">Pune delivery questions? Send your pincode through a product page and we’ll show the quickest route.</p>}</div></div>
         <div className="border-l border-sidebar-border pl-6"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/45">For the trade</p><p className="mt-4 text-sm leading-6 text-sidebar-foreground/70">Project pricing, reliable lead times, and one person who knows your BOQ.</p><Link href="/business" className="mt-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-primary" data-testid="link-footer-quote">Start a quote <ArrowRight className="h-3.5 w-3.5" /></Link></div>
       </div>
       <div className="border-t border-sidebar-border px-5 py-4 text-center font-mono-ui text-[9px] uppercase tracking-[0.12em] text-sidebar-foreground/40">© 2025 DashDecor Marketplace · Pune, Maharashtra</div>
@@ -205,6 +273,7 @@ function Footer() {
 function Home() {
   const { data, isLoading, isError, refetch } = useGetCatalogHighlights();
   const { data: categories } = useListCategories();
+  const { data: brands } = useListBrands();
   const highlights = data;
   const categoryList = highlights?.categories?.length ? highlights.categories : categories;
   return (
@@ -241,18 +310,34 @@ function Home() {
           <div className="mt-10">{isError ? <QueryError onRetry={() => { void refetch(); }} /> : isLoading ? <SkeletonGrid /> : <ProductGrid products={highlights?.featuredProducts} />}</div>
         </div>
       </section>
+       <BrandStrip brands={brands} />
       <TrustBand trustSignals={highlights?.trustSignals} />
       <ServiceArea area={highlights?.serviceArea} />
     </main>
   );
 }
 
+function BrandStrip({ brands }: { brands?: Brand[] }) {
+  return <section className="mx-auto max-w-[1440px] border-t border-border px-5 py-16 lg:px-10 lg:py-20">
+    <div className="flex items-end justify-between gap-4">
+      <div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary">Browse by brand</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em] md:text-5xl">Names you can trust.</h2></div>
+      <Link href="/catalog" className="hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] hover:text-primary md:flex" data-testid="link-home-all-brands">View all materials <ArrowRight className="h-4 w-4" /></Link>
+    </div>
+    {brands?.length ? <div className="mt-8 grid grid-cols-2 border-l border-t border-border sm:grid-cols-3 lg:grid-cols-6">
+      {brands.slice(0, 6).map((brand) => <Link href={`/catalog?brand=${brand.slug}`} key={brand.id} className="group flex min-h-28 flex-col justify-between border-b border-r border-border bg-card p-4 hover:bg-muted" data-testid={`card-brand-${brand.id}`}>
+        <span className="text-lg font-extrabold tracking-[-0.04em] group-hover:text-primary" data-testid={`text-brand-name-${brand.id}`}>{brand.name}</span>
+        <span className="font-mono-ui text-[9px] uppercase tracking-[0.1em] text-muted-foreground" data-testid={`text-brand-count-${brand.id}`}>{brand.productCount} materials <ArrowRight className="ml-1 inline h-3 w-3 transition-transform group-hover:translate-x-1" /></span>
+      </Link>)}
+    </div> : <div className="mt-8 grid grid-cols-2 gap-px bg-border sm:grid-cols-3 lg:grid-cols-6">{Array.from({ length: 6 }).map((_, index) => <div key={index} className="skeleton-pulse h-28 bg-muted" data-testid={`skeleton-brand-${index}`} />)}</div>}
+  </section>;
+}
+
 function CategoryTile({ category, index }: { category: Category; index: number }) {
   return (
     <Link href={`/catalog?category=${category.slug}`} className={`group relative flex h-64 flex-col justify-end overflow-hidden p-5 text-primary-foreground ${index % 2 ? 'bg-primary' : 'bg-secondary'}`} data-testid={`card-category-${category.id}`}>
-      <div className="absolute inset-0 opacity-45"><img src={category.imageUrl} alt="" className="h-full w-full object-cover mix-blend-luminosity" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></div>
+      <div className="absolute inset-0 opacity-45"><img src={category.imageUrl} alt="" className="h-full w-full object-cover mix-blend-luminosity" onError={(event) => { event.currentTarget.style.display = 'none'; }} data-testid={`img-category-${category.id}`} /></div>
       <div className="absolute inset-0 bg-gradient-to-t from-foreground/75 via-foreground/5 to-transparent" />
-      <div className="relative"><p className="font-mono-ui text-[9px] uppercase tracking-[0.13em] text-primary-foreground/70">{String(index + 1).padStart(2, '0')} / {category.productCount} pieces</p><h3 className="mt-2 text-xl font-bold tracking-[-0.03em]">{category.name}</h3><p className="mt-1 max-w-[210px] text-xs leading-5 text-primary-foreground/75">{category.description}</p><span className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-0 group-hover:opacity-100">Explore <ArrowRight className="h-3.5 w-3.5" /></span></div>
+      <div className="relative"><p className="font-mono-ui text-[9px] uppercase tracking-[0.13em] text-primary-foreground/70" data-testid={`text-category-count-${category.id}`}>{String(index + 1).padStart(2, '0')} / {category.productCount} pieces</p><h3 className="mt-2 text-xl font-bold tracking-[-0.03em]" data-testid={`text-category-name-${category.id}`}>{category.name}</h3><p className="mt-1 max-w-[210px] text-xs leading-5 text-primary-foreground/75" data-testid={`text-category-description-${category.id}`}>{category.description}</p><span className="mt-4 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] opacity-0 group-hover:opacity-100">Explore <ArrowRight className="h-3.5 w-3.5" /></span></div>
     </Link>
   );
 }
@@ -269,10 +354,12 @@ function ServiceArea({ area }: { area?: string }) {
 function Catalog() {
   const [, setLocation] = useLocation();
   const [location] = useLocation();
+  const pathParams = useParams<{ category?: string }>();
   const paramsFromUrl = useMemo(() => new URLSearchParams(location.split('?')[1] || ''), [location]);
   const [query, setQuery] = useState(paramsFromUrl.get('q') || '');
-  const [category, setCategory] = useState(paramsFromUrl.get('category') || '');
+  const [category, setCategory] = useState(paramsFromUrl.get('category') || pathParams.category || '');
   const [brand, setBrand] = useState(paramsFromUrl.get('brand') || '');
+  const [pincode, setPincode] = useState(paramsFromUrl.get('pincode') || '');
   const [sort, setSort] = useState('relevance');
   const [availability, setAvailability] = useState('all');
   const [page, setPage] = useState(1);
@@ -280,22 +367,25 @@ function Catalog() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.split('?')[1] || '');
     setQuery(urlParams.get('q') || '');
-    setCategory(urlParams.get('category') || '');
+    setCategory(urlParams.get('category') || pathParams.category || '');
     setBrand(urlParams.get('brand') || '');
+    setPincode(urlParams.get('pincode') || '');
+    const urlAvailability = urlParams.get('availability');
+    setAvailability(urlAvailability === 'same-day' || urlAvailability === 'in-stock' ? urlAvailability : 'all');
     setPage(1);
-  }, [location]);
-  const productParams = useMemo(() => ({ q: query || undefined, category: category || undefined, brand: brand || undefined, sort: sort as 'relevance' | 'price-low' | 'price-high' | 'newest', availability: availability as 'all' | 'in-stock' | 'same-day', page, pageSize: 12 }), [query, category, brand, sort, availability, page]);
+  }, [location, pathParams.category]);
+  const productParams = useMemo(() => ({ q: query || undefined, category: category || undefined, brand: brand || undefined, pincode: /^[0-9]{6}$/.test(pincode) ? pincode : undefined, sort: sort as 'relevance' | 'price-low' | 'price-high' | 'newest', availability: availability as 'all' | 'in-stock' | 'same-day', page, pageSize: 12 }), [query, category, brand, pincode, sort, availability, page]);
   const { data, isLoading, isError, refetch } = useListProducts(productParams);
   const { data: categories } = useListCategories();
   const { data: brands } = useListBrands();
   const totalPages = Math.max(1, Math.ceil((data?.total || 0) / (data?.pageSize || 12)));
-  const clearFilters = () => { setQuery(''); setCategory(''); setBrand(''); setSort('relevance'); setAvailability('all'); setPage(1); setLocation('/catalog'); };
+  const clearFilters = () => { setQuery(''); setCategory(''); setBrand(''); setPincode(''); setSort('relevance'); setAvailability('all'); setPage(1); setLocation('/catalog'); };
   return (
     <main className="mx-auto max-w-[1440px] px-5 py-10 lg:px-10 lg:py-14">
       <div className="animate-rise flex flex-col justify-between gap-5 border-b border-border pb-8 md:flex-row md:items-end"><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary">The full library / 02</p><h1 className="mt-3 display-serif text-5xl tracking-[-0.05em] md:text-6xl">Shop materials.</h1><p className="mt-3 text-sm text-muted-foreground">{data?.total ? `${data.total} materials ready for your next room.` : 'Browse surfaces, fixtures and finishing details.'}</p></div><div className="w-full md:w-[360px]"><SearchBar initialValue={query} /></div></div>
       <div className="mt-8 flex items-center justify-between gap-3 border-b border-border pb-4"><button type="button" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] lg:hidden" onClick={() => setMobileFilters(!mobileFilters)} data-testid="button-toggle-filters"><SlidersHorizontal className="h-4 w-4" /> Filters</button><p className="hidden text-xs text-muted-foreground lg:block" data-testid="text-catalog-count">{data?.total || 0} results</p><div className="ml-auto flex items-center gap-2"><label htmlFor="sort-products" className="font-mono-ui text-[9px] uppercase tracking-[0.1em] text-muted-foreground">Sort by</label><select id="sort-products" value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="h-9 border border-border bg-card px-3 text-xs font-bold outline-none" data-testid="select-sort"><option value="relevance">Relevance</option><option value="newest">Newest</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option></select></div></div>
       <div className="grid gap-10 pt-8 lg:grid-cols-[215px_1fr]">
-        <aside className={`${mobileFilters ? 'block' : 'hidden'} lg:block`} aria-label="Catalog filters"><div className="sticky top-28 space-y-8"><FilterSelect label="Category" value={category} onChange={(value) => { setCategory(value); setPage(1); }} options={categories?.map((item) => ({ value: item.slug, label: item.name })) || []} testId="select-category" /><FilterSelect label="Brand" value={brand} onChange={(value) => { setBrand(value); setPage(1); }} options={brands?.map((item) => ({ value: item.slug, label: item.name })) || []} testId="select-brand" /><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Availability</p><div className="mt-3 grid gap-2">{[['all', 'All materials'], ['in-stock', 'In stock'], ['same-day', 'Same-day eligible']].map(([value, label]) => <label className="flex cursor-pointer items-center gap-3 text-xs" key={value}><input type="radio" name="availability" value={value} checked={availability === value} onChange={() => { setAvailability(value); setPage(1); }} className="accent-primary" data-testid={`radio-availability-${value}`} />{label}</label>)}</div></div><button type="button" onClick={clearFilters} className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-primary hover:text-foreground" data-testid="button-clear-filters">Clear all <X className="h-3 w-3" /></button></div></aside>
+         <aside className={`${mobileFilters ? 'block' : 'hidden'} lg:block`} aria-label="Catalog filters"><div className="sticky top-28 space-y-8"><FilterSelect label="Category" value={category} onChange={(value) => { setCategory(value); setPage(1); }} options={categories?.map((item) => ({ value: item.slug, label: item.name })) || []} testId="select-category" /><FilterSelect label="Brand" value={brand} onChange={(value) => { setBrand(value); setPage(1); }} options={brands?.map((item) => ({ value: item.slug, label: item.name })) || []} testId="select-brand" /><div><label htmlFor="input-catalog-pincode" className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Delivery pincode</label><input id="input-catalog-pincode" inputMode="numeric" maxLength={6} value={pincode} onChange={(event) => { setPincode(event.target.value.replace(/\D/g, '').slice(0, 6)); setPage(1); }} placeholder="Optional 6-digit code" className="mt-3 h-10 w-full border border-border bg-card px-3 text-xs outline-none focus:border-primary" data-testid="input-catalog-pincode" /><p className="mt-2 text-[10px] leading-4 text-muted-foreground">Only show materials with inventory near you.</p></div><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Availability</p><div className="mt-3 grid gap-2">{[['all', 'All materials'], ['in-stock', 'In stock'], ['same-day', 'Same-day eligible']].map(([value, label]) => <label className="flex cursor-pointer items-center gap-3 text-xs" key={value}><input type="radio" name="availability" value={value} checked={availability === value} onChange={() => { setAvailability(value); setPage(1); }} className="accent-primary" data-testid={`radio-availability-${value}`} />{label}</label>)}</div></div><button type="button" onClick={clearFilters} className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-primary hover:text-foreground" data-testid="button-clear-filters">Clear all <X className="h-3 w-3" /></button></div></aside>
         <section>{isError ? <QueryError onRetry={() => { void refetch(); }} /> : isLoading ? <SkeletonGrid /> : <><ProductGrid products={data?.products} emptyLabel="Try a broader search or clear one of your filters." /><div className="mt-14 flex items-center justify-between border-t border-border pt-5"><p className="font-mono-ui text-[10px] uppercase tracking-[0.1em] text-muted-foreground">Page {page} / {totalPages}</p><div className="flex gap-2"><button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)} className="flex h-9 w-9 items-center justify-center border border-border disabled:opacity-35" aria-label="Previous page" data-testid="button-page-previous">←</button><button type="button" disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="flex h-9 w-9 items-center justify-center border border-border disabled:opacity-35" aria-label="Next page" data-testid="button-page-next">→</button></div></div></>}</section>
       </div>
     </main>
@@ -309,27 +399,51 @@ function FilterSelect({ label, value, onChange, options, testId }: { label: stri
 function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading, isError, refetch } = useGetProduct(slug || '');
+  const { isAuthenticated, requireAuth } = useAuth();
+  const relatedParams = useMemo(() => product ? { category: product.categorySlug, page: 1, pageSize: 5, sort: 'relevance' as const } : undefined, [product]);
+  const { data: relatedData } = useListProducts(relatedParams, { query: { enabled: !!product, queryKey: getListProductsQueryKey(relatedParams) } });
   const [selectedVariant, setSelectedVariant] = useState('');
   const [saved, setSaved] = useState(false);
   const [added, setAdded] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const toggleSaved = () => {
+    if (!isAuthenticated) {
+      requireAuth('wishlist', product ? `/product/${product.slug}` : undefined);
+      return;
+    }
+    setSaved((current) => !current);
+  };
+  const addToBag = () => {
+    if (!isAuthenticated) {
+      requireAuth('bag', product ? `/product/${product.slug}` : undefined);
+      return;
+    }
+    setAdded(true);
+  };
+  const buyNow = () => {
+    if (!isAuthenticated) {
+      requireAuth('buyNow', product ? `/product/${product.slug}` : undefined);
+      return;
+    }
+  };
   if (isLoading) return <main className="mx-auto max-w-[1440px] px-5 py-12 lg:px-10"><div className="grid gap-10 md:grid-cols-2"><div className="skeleton-pulse min-h-[520px] bg-muted" /><div className="space-y-5"><div className="h-3 w-1/4 bg-muted" /><div className="h-12 w-4/5 bg-muted" /><div className="h-6 w-1/3 bg-muted" /><div className="h-32 w-full bg-muted" /></div></div></main>;
   if (isError || !product) return <main className="mx-auto max-w-2xl px-5 py-24"><QueryError onRetry={() => { void refetch(); }} /></main>;
   const currentVariant = product.variants.find((variant) => variant.id === selectedVariant);
   const price = currentVariant?.price || product.price;
   return (
     <main className="mx-auto max-w-[1440px] px-5 py-8 lg:px-10 lg:py-12">
-      <div className="mb-8 flex items-center gap-2 font-mono-ui text-[9px] uppercase tracking-[0.12em] text-muted-foreground"><Link href="/catalog" className="hover:text-primary" data-testid="link-breadcrumb-catalog">Catalog</Link><span>/</span><span>{product.category}</span><span>/</span><span className="text-foreground">{product.name}</span></div>
+      <div className="mb-8 flex items-center gap-2 font-mono-ui text-[9px] uppercase tracking-[0.12em] text-muted-foreground"><Link href="/catalog" className="hover:text-primary" data-testid="link-breadcrumb-catalog">Catalog</Link><span>/</span><span data-testid={`text-breadcrumb-category-${product.id}`}>{product.category}</span><span>/</span><span className="text-foreground" data-testid={`text-breadcrumb-product-${product.id}`}>{product.name}</span></div>
       <div className="grid gap-10 md:grid-cols-[1.06fr_.94fr] md:gap-16">
-        <div className="relative"><ProductImage product={product} large /><button type="button" onClick={() => setSaved(!saved)} className={`absolute right-4 top-4 flex h-11 w-11 items-center justify-center border ${saved ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card/90 hover:border-primary hover:text-primary'}`} aria-label={saved ? 'Remove from wishlist' : 'Add to wishlist'} data-testid="button-product-wishlist"><Heart className={`h-5 w-5 ${saved ? 'fill-current' : ''}`} /></button></div>
-        <div className="animate-rise animate-rise-delay-1"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">{product.brand} · {product.category}</p><h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-[1.03] tracking-[-0.055em] md:text-6xl">{product.name}</h1><div className="mt-5 flex items-center gap-4"><span className="flex items-center gap-1 font-mono-ui text-xs"><Star className="h-3 w-3 fill-primary text-primary" /> {product.rating.toFixed(1)} <span className="text-muted-foreground">/ {product.reviewCount} reviews</span></span>{product.badge && <span className="bg-accent px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.1em]">{product.badge}</span>}</div><p className="mt-8 text-2xl font-extrabold">{money(price)} <span className="text-sm font-normal text-muted-foreground">/ {product.unit}</span></p>{product.compareAtPrice && <p className="mt-1 text-sm text-muted-foreground">Usually <span className="line-through">{money(product.compareAtPrice)}</span></p>}<p className="mt-7 max-w-lg text-sm leading-7 text-muted-foreground">{product.description}</p>
+         <div className="relative"><ProductImage product={product} large /><button type="button" onClick={toggleSaved} className={`absolute right-4 top-4 flex h-11 w-11 items-center justify-center border ${saved ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card/90 hover:border-primary hover:text-primary'}`} aria-label={saved ? 'Remove from wishlist' : 'Add to wishlist'} data-testid="button-product-wishlist"><Heart className={`h-5 w-5 ${saved ? 'fill-current' : ''}`} /></button></div>
+        <div className="animate-rise animate-rise-delay-1"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">{product.brand} · {product.category}</p><h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-[1.03] tracking-[-0.055em] md:text-6xl" data-testid={`text-product-name-${product.id}`}>{product.name}</h1><div className="mt-5 flex items-center gap-4"><span className="flex items-center gap-1 font-mono-ui text-xs" data-testid={`text-product-rating-${product.id}`}><Star className="h-3 w-3 fill-primary text-primary" /> {product.rating.toFixed(1)} <span className="text-muted-foreground">/ {product.reviewCount} reviews</span></span>{product.badge && <span className="bg-accent px-2 py-1 font-mono-ui text-[9px] uppercase tracking-[0.1em]" data-testid={`text-product-badge-${product.id}`}>{product.badge}</span>}</div><p className="mt-8 text-2xl font-extrabold" data-testid={`text-product-price-${product.id}`}>{money(price)} <span className="text-sm font-normal text-muted-foreground">/ {product.unit}</span></p>{product.compareAtPrice && <p className="mt-1 text-sm text-muted-foreground">Usually <span className="line-through">{money(product.compareAtPrice)}</span></p>}<p className="mt-7 max-w-lg text-sm leading-7 text-muted-foreground" data-testid={`text-product-description-${product.id}`}>{product.description}</p>
           {product.variants.length > 0 && <div className="mt-8 border-t border-border pt-6"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Choose a variant</p><div className="mt-3 flex flex-wrap gap-2">{product.variants.map((variant) => <button type="button" key={variant.id} onClick={() => setSelectedVariant(variant.id)} disabled={!variant.inStock} className={`border px-3 py-2 text-xs ${selectedVariant === variant.id ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card hover:border-primary'} disabled:cursor-not-allowed disabled:opacity-35`} data-testid={`button-variant-${variant.id}`}>{variant.label}: {variant.value}</button>)}</div></div>}
-          <div className="mt-8 flex gap-3"><button type="button" onClick={() => setAdded(true)} disabled={!product.inStock} className="flex h-12 flex-1 items-center justify-center gap-2 bg-primary text-xs font-bold uppercase tracking-[0.1em] text-primary-foreground hover:-translate-y-0.5 disabled:opacity-40" data-testid="button-add-to-bag">{added ? <><Check className="h-4 w-4" /> Added to bag</> : <><ShoppingBag className="h-4 w-4" /> Add to bag</>}</button><button type="button" onClick={() => setSaved(!saved)} className="flex h-12 w-12 items-center justify-center border border-border bg-card hover:border-primary hover:text-primary md:w-14" aria-label="Save product" data-testid="button-save-product"><Heart className={`h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} /></button></div>
+           <div className="mt-8 grid gap-3 sm:grid-cols-2"><button type="button" onClick={addToBag} disabled={!product.inStock || added} className="flex h-12 items-center justify-center gap-2 bg-primary text-xs font-bold uppercase tracking-[0.1em] text-primary-foreground hover:-translate-y-0.5 disabled:opacity-40" data-testid="button-add-to-bag">{added ? <><Check className="h-4 w-4" /> Added to bag</> : <><ShoppingBag className="h-4 w-4" /> Add to bag</>}</button><button type="button" onClick={buyNow} disabled={!product.inStock} className="flex h-12 items-center justify-center gap-2 border border-primary bg-card text-xs font-bold uppercase tracking-[0.1em] text-primary hover:bg-primary/5 disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-buy-now">Buy now <ArrowRight className="h-4 w-4" /></button></div><button type="button" onClick={toggleSaved} className="mt-3 inline-flex h-10 items-center gap-2 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-primary" aria-label={saved ? 'Remove product from wishlist' : 'Save product'} data-testid="button-save-product"><Heart className={`h-4 w-4 ${saved ? 'fill-primary text-primary' : ''}`} /> {saved ? 'Saved to wishlist' : 'Save to wishlist'}</button>
           <DeliveryCheck slug={product.slug} />
           <SellerCard product={product} />
         </div>
       </div>
-      <div className="mt-20 grid gap-12 border-t border-border pt-12 md:grid-cols-[1fr_1fr]"><section><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">Specifications</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em]">The useful details.</h2><div className="mt-7 divide-y divide-border border-y border-border">{product.specifications.map((spec) => <div className="grid grid-cols-[.8fr_1.2fr] gap-4 py-4 text-sm" key={spec.label}><span className="text-muted-foreground">{spec.label}</span><span className="font-bold">{spec.value}</span></div>)}</div></section><section><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">Questions, answered</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em]">Before it arrives.</h2><div className="mt-7 divide-y divide-border border-y border-border">{product.faqs.map((faq, index) => <div key={faq.question}><button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex w-full items-center justify-between gap-4 py-4 text-left text-sm font-bold" aria-expanded={openFaq === index} data-testid={`button-faq-${index}`}>{faq.question}{openFaq === index ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}</button>{openFaq === index && <p className="pb-4 pr-8 text-sm leading-6 text-muted-foreground">{faq.answer}</p>}</div>)}</div></section></div>
+       <div className="mt-20 grid gap-12 border-t border-border pt-12 md:grid-cols-[1fr_1fr]"><section><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">Specifications</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em]">The useful details.</h2><div className="mt-7 divide-y divide-border border-y border-border">{product.specifications.map((spec) => <div className="grid grid-cols-[.8fr_1.2fr] gap-4 py-4 text-sm" key={spec.label} data-testid={`row-product-spec-${product.id}-${spec.label.toLowerCase().replace(/\s+/g, '-')}`}><span className="text-muted-foreground">{spec.label}</span><span className="font-bold">{spec.value}</span></div>)}</div></section><section><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">Questions, answered</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em]">Before it arrives.</h2><div className="mt-7 divide-y divide-border border-y border-border">{product.faqs.map((faq, index) => <div key={faq.question}><button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} className="flex w-full items-center justify-between gap-4 py-4 text-left text-sm font-bold" aria-expanded={openFaq === index} data-testid={`button-faq-${index}`}>{faq.question}{openFaq === index ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}</button>{openFaq === index && <p className="pb-4 pr-8 text-sm leading-6 text-muted-foreground" data-testid={`text-product-faq-answer-${index}`}>{faq.answer}</p>}</div>)}</div></section></div>
+       {relatedData?.products.filter((related) => related.id !== product.id).length ? <section className="mt-20 border-t border-border pt-12"><div className="flex items-end justify-between gap-4"><div><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">More from this category</p><h2 className="mt-3 display-serif text-4xl tracking-[-0.04em]">Keep exploring.</h2></div><Link href={`/catalog?category=${product.categorySlug}`} className="hidden items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] hover:text-primary md:flex" data-testid="link-related-catalog">View category <ArrowRight className="h-4 w-4" /></Link></div><div className="mt-8"><ProductGrid products={relatedData.products.filter((related) => related.id !== product.id).slice(0, 4)} emptyLabel="No more materials in this category yet." /></div></section> : null}
     </main>
   );
 }
@@ -342,7 +456,7 @@ function DeliveryCheck({ slug }: { slug: string }) {
 }
 
 function SellerCard({ product }: { product: Product }) {
-  return <div className="mt-5 flex items-center gap-3 border-t border-border pt-5"><span className="flex h-10 w-10 items-center justify-center bg-accent text-sm font-bold text-accent-foreground">{product.seller.name.slice(0, 1)}</span><div><p className="text-xs font-bold">{product.seller.name} {product.seller.verified && <BadgeCheck className="ml-1 inline h-3.5 w-3.5 text-secondary" />}</p><p className="mt-1 font-mono-ui text-[9px] uppercase tracking-[0.1em] text-muted-foreground">{product.seller.city} · verified seller</p></div><Link href="/business" className="ml-auto text-[10px] font-bold uppercase tracking-[0.1em] text-primary" data-testid="link-view-seller">Seller details</Link></div>;
+  return <div className="mt-5 flex items-center gap-3 border-t border-border pt-5" data-testid={`card-seller-${product.id}`}><span className="flex h-10 w-10 items-center justify-center bg-accent text-sm font-bold text-accent-foreground">{product.seller.name.slice(0, 1)}</span><div><p className="text-xs font-bold" data-testid={`text-seller-name-${product.id}`}>{product.seller.name} {product.seller.verified && <BadgeCheck className="ml-1 inline h-3.5 w-3.5 text-secondary" />}</p><p className="mt-1 font-mono-ui text-[9px] uppercase tracking-[0.1em] text-muted-foreground" data-testid={`text-seller-city-${product.id}`}>{product.seller.city} · verified seller</p></div><Link href="/business" className="ml-auto text-[10px] font-bold uppercase tracking-[0.1em] text-primary" data-testid="link-view-seller">Seller details</Link></div>;
 }
 
 function EntryPage({ kind }: { kind: 'sell' | 'business' }) {
@@ -359,18 +473,21 @@ function Field({ label, value, onChange, placeholder, testId, type = 'text', tex
 }
 
 function Account() {
-  const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  return <main className="mx-auto max-w-[1440px] px-5 py-10 lg:px-10 lg:py-16"><div className="grid min-h-[560px] border border-border md:grid-cols-[1fr_1fr]"><div className="relative overflow-hidden bg-primary p-8 text-primary-foreground md:p-14"><div className="absolute -right-20 -top-16 h-72 w-72 rounded-full border border-primary-foreground/20" /><div className="absolute bottom-10 right-10 h-28 w-28 rotate-45 border border-primary-foreground/30" /><p className="relative font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary-foreground/70">Your DashDecor / 05</p><h1 className="relative mt-8 max-w-sm display-serif text-5xl leading-[.98] tracking-[-0.05em] md:text-7xl">Keep your<br /><span className="text-accent">eye</span> on it.</h1><p className="relative mt-7 max-w-sm text-sm leading-7 text-primary-foreground/75">Save materials you love, keep your shortlist close, and pick up where your project left off.</p></div><div className="flex items-center bg-card p-8 md:p-14">{submitted ? <div data-testid="status-account-submitted"><span className="flex h-12 w-12 items-center justify-center bg-secondary text-secondary-foreground"><Check className="h-5 w-5" /></span><h2 className="mt-6 display-serif text-4xl">Check your inbox.</h2><p className="mt-3 max-w-sm text-sm leading-6 text-muted-foreground">We sent a sign-in link to {email}. It’ll be waiting when you are.</p><button type="button" onClick={() => setSubmitted(false)} className="mt-7 text-xs font-bold uppercase tracking-[0.1em] text-primary" data-testid="button-account-again">Use another email</button></div> : <form onSubmit={(event) => { event.preventDefault(); if (email) setSubmitted(true); }} className="w-full max-w-md"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">Welcome back</p><h2 className="mt-4 text-3xl font-extrabold tracking-[-0.04em]">Sign in to your shelf.</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">No password to remember. We’ll email you a secure link.</p><label className="mt-8 grid gap-2 text-xs font-bold"><span>Email address</span><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" className="h-12 border border-border bg-background px-3 text-sm font-normal outline-none focus:border-primary" data-testid="input-account-email" /></label><button type="submit" className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-primary text-xs font-bold uppercase tracking-[0.1em] text-primary-foreground hover:-translate-y-0.5" data-testid="button-account-submit">Email me a sign-in link <ArrowRight className="h-4 w-4" /></button></form>}</div></div></main>;
+  const { isAuthenticated, requireAuth } = useAuth();
+  return <main className="mx-auto max-w-[1440px] px-5 py-10 lg:px-10 lg:py-16"><div className="grid min-h-[560px] border border-border md:grid-cols-[1fr_1fr]"><div className="relative overflow-hidden bg-primary p-8 text-primary-foreground md:p-14"><div className="absolute -right-20 -top-16 h-72 w-72 rounded-full border border-primary-foreground/20" /><div className="absolute bottom-10 right-10 h-28 w-28 rotate-45 border border-primary-foreground/30" /><p className="relative font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary-foreground/70">Your DashDecor / 05</p><h1 className="relative mt-8 max-w-sm display-serif text-5xl leading-[.98] tracking-[-0.05em] md:text-7xl">Keep your<br /><span className="text-accent">eye</span> on it.</h1><p className="relative mt-7 max-w-sm text-sm leading-7 text-primary-foreground/75">Save materials you love, keep your shortlist close, and pick up where your project left off.</p></div><div className="flex items-center bg-card p-8 md:p-14"><div className="w-full max-w-md" data-testid="status-account-boundary"><p className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-primary">{isAuthenticated ? 'Your shelf' : 'Guest browsing'}</p><h2 className="mt-4 text-3xl font-extrabold tracking-[-0.04em]">{isAuthenticated ? 'Your saved materials.' : 'Sign in to your shelf.'}</h2><p className="mt-3 text-sm leading-6 text-muted-foreground">{isAuthenticated ? 'Your saved materials and project bags will appear here.' : 'The identity provider will connect here in the next phase. For now, browsing stays open and protected actions explain the handoff.'}</p><div className="mt-8 border border-border bg-background p-5" data-testid="card-auth-provider-boundary"><p className="font-mono-ui text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Provider boundary / phase 1</p><p className="mt-3 text-sm font-bold">No account action is completed in this storefront build.</p><p className="mt-2 text-xs leading-5 text-muted-foreground">When the DashDecor identity provider is connected, this surface will host its secure sign-in flow.</p></div>{!isAuthenticated && <div className="mt-7 flex flex-col gap-3 sm:flex-row"><button type="button" onClick={() => requireAuth('account')} className="inline-flex h-11 items-center justify-center gap-2 bg-primary px-4 text-xs font-bold uppercase tracking-[0.1em] text-primary-foreground" data-testid="button-account-sign-in">Continue with login <ArrowRight className="h-4 w-4" /></button><button type="button" onClick={() => requireAuth('account')} className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-xs font-bold uppercase tracking-[0.1em] hover:border-primary" data-testid="button-account-create">Create account</button></div>}<Link href="/catalog" className="mt-7 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.1em] text-primary" data-testid="link-account-browse">Continue browsing <ArrowRight className="h-4 w-4" /></Link></div></div></div></main>;
+}
+
+function CartPage() {
+  return <main className="mx-auto max-w-[1440px] px-5 py-12 lg:px-10 lg:py-20"><div className="mx-auto max-w-2xl"><p className="font-mono-ui text-[10px] uppercase tracking-[0.16em] text-primary">Your project bag / 00</p><h1 className="mt-4 display-serif text-5xl tracking-[-0.05em] md:text-7xl">Your cart is empty.</h1><p className="mt-5 max-w-md text-sm leading-7 text-muted-foreground">Browse materials and add the pieces you are considering. You can see your bag without signing in; an account is only needed when you save or buy.</p><Link href="/catalog" className="mt-8 inline-flex items-center gap-2 bg-primary px-5 py-3 text-xs font-bold uppercase tracking-[0.1em] text-primary-foreground hover:-translate-y-0.5" data-testid="link-cart-browse">Browse products <ArrowRight className="h-4 w-4" /></Link></div></main>;
 }
 
 function Router() {
   const [location] = useLocation();
-  return <ErrorBoundary resetKey={location}><Switch><Route path="/" component={Home} /><Route path="/catalog" component={Catalog} /><Route path="/product/:slug" component={ProductDetail} /><Route path="/sell"><EntryPage kind="sell" /></Route><Route path="/business"><EntryPage kind="business" /></Route><Route path="/account" component={Account} /><Route component={NotFound} /></Switch></ErrorBoundary>;
+  return <ErrorBoundary resetKey={location}><Switch><Route path="/" component={Home} /><Route path="/catalog" component={Catalog} /><Route path="/catalog/:category" component={Catalog} /><Route path="/product/:slug" component={ProductDetail} /><Route path="/sell"><EntryPage kind="sell" /></Route><Route path="/business"><EntryPage kind="business" /></Route><Route path="/account" component={Account} /><Route path="/cart" component={CartPage} /><Route component={NotFound} /></Switch></ErrorBoundary>;
 }
 
 function App() {
-  return <QueryClientProvider client={queryClient}><TooltipProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Shell><Router /></Shell></WouterRouter><Toaster /></TooltipProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><TooltipProvider><ThemeProvider><AuthProvider><WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}><Shell><Router /></Shell><AuthRequiredDialog /></WouterRouter></AuthProvider></ThemeProvider><Toaster /></TooltipProvider></QueryClientProvider>;
 }
 
 export default App;

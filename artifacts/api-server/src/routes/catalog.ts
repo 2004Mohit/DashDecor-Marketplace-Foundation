@@ -132,7 +132,14 @@ router.get("/products", async (req, res): Promise<void> => {
   const { q, category, brand, sort, availability, pincode, page, pageSize } = parsed.data;
   const filters = [eq(productsTable.status, "published")];
   if (q) {
-    filters.push(or(ilike(productsTable.name, `%${q}%`), ilike(productsTable.description, `%${q}%`))!);
+    filters.push(
+      or(
+        ilike(productsTable.name, `%${q}%`),
+        ilike(productsTable.description, `%${q}%`),
+        ilike(brandsTable.name, `%${q}%`),
+        ilike(categoriesTable.name, `%${q}%`),
+      )!,
+    );
   }
   if (category) {
     filters.push(eq(categoriesTable.slug, category));

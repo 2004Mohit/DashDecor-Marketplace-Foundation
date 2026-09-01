@@ -1,0 +1,961 @@
+# PHASE 1 — CUSTOMER STOREFRONT & PUBLIC PRODUCT DISCOVERY
+
+The existing DashDecor Marketplace foundation is already implemented.
+
+Do NOT rebuild the project from scratch.
+
+Do NOT replace the existing API architecture.
+
+Do NOT start Supabase, Cashfree, authentication backend, tax engine, checkout backend, Admin panel or Seller panel yet.
+
+This phase is specifically about making the **customer-facing storefront a strong public marketplace browsing experience**.
+
+---
+
+# 1. CORE PRODUCT PRINCIPLE
+
+The homepage should primarily be a place where customers can:
+
+> **Discover and browse interior/construction materials that are available to buy.**
+
+A visitor should be able to enter the website without creating an account and immediately understand:
+
+* What products are available
+* What categories are available
+* What brands are available
+* Product prices
+* Product images
+* Product availability
+* Seller information where appropriate
+* Delivery/serviceability information where appropriate
+
+The website should NOT force a visitor to log in just to browse products.
+
+### Important rule
+
+**Browsing = Public**
+
+**Transactional/personal actions = Authentication required**
+
+---
+
+# 2. GUEST USER EXPERIENCE
+
+A guest visitor should be able to:
+
+### Public actions
+
+* Open homepage
+* Browse categories
+* Browse products
+* Search products
+* Filter products
+* Sort products
+* View product details
+* View product images
+* View product specifications
+* View variants
+* View pricing
+* View seller information that is intentionally public
+* Check delivery/serviceability where allowed
+* Browse brands
+* Navigate the catalogue
+* Read public content
+
+No login should be required for these actions.
+
+---
+
+# 3. ACTIONS THAT REQUIRE LOGIN
+
+The following actions should require authentication:
+
+* Add to cart
+* Buy now
+* Add to wishlist
+* Place an order
+* Save address
+* View account
+* View order history
+* Track personal orders
+* Submit a review
+* Submit an enquiry where an account is required
+* Access personalized/customer-specific functionality
+
+However:
+
+## DO NOT simply redirect the guest to `/login`.
+
+Instead, create a reusable authentication prompt/modal/sheet.
+
+Example:
+
+```text
+┌──────────────────────────────────────┐
+│                                      │
+│       Sign in to continue            │
+│                                      │
+│  Create an account or sign in to     │
+│  continue with this action.          │
+│                                      │
+│      [ Continue with Login ]         │
+│                                      │
+│      [ Create Account ]              │
+│                                      │
+│          Continue Browsing           │
+│                                      │
+└──────────────────────────────────────┘
+```
+
+The exact design should match the DashDecor visual system.
+
+The user should understand:
+
+**Why am I being asked to log in?**
+
+---
+
+# 4. PRESERVE USER INTENT
+
+This is important.
+
+If a guest clicks:
+
+```text
+Add to Cart
+```
+
+the system should:
+
+1. Detect that authentication is required.
+2. Show the login/signup prompt.
+3. Preserve the intended action.
+4. After successful authentication, continue the intended action where technically appropriate.
+
+For example:
+
+```text
+Guest
+ ↓
+Click Add to Cart
+ ↓
+Login Prompt
+ ↓
+Login
+ ↓
+Return to Product
+ ↓
+Add Product to Cart
+```
+
+Similarly:
+
+```text
+Guest
+ ↓
+Click Buy Now
+ ↓
+Login Prompt
+ ↓
+Login
+ ↓
+Continue to checkout flow
+```
+
+Do not silently lose the user's action.
+
+If the action cannot safely be resumed automatically, return the user to the relevant product/page with a clear next step.
+
+---
+
+# 5. HOMEPAGE
+
+The homepage should be redesigned around **product discovery**, not around a generic marketing landing page.
+
+The first screen should communicate:
+
+> **What can I buy here?**
+
+The homepage should prominently expose products and categories.
+
+Suggested structure:
+
+```text
+HEADER
+│
+├── Logo
+├── Categories
+├── Search
+├── Location/Pincode
+├── Wishlist
+├── Cart
+└── Account/Login
+│
+HERO / DISCOVERY INTRO
+│
+├── Short marketplace proposition
+├── Search / discovery CTA
+└── Optional category shortcuts
+│
+CATEGORIES
+│
+├── Category 1
+├── Category 2
+├── Category 3
+├── Category 4
+└── View All
+│
+PRODUCT DISCOVERY
+│
+├── Featured / Popular Products
+├── New Arrivals
+├── Best Value / Recommended
+└── View All Products
+│
+BRANDS
+│
+├── Brand cards/logos
+└── View All
+│
+DELIVERY / TRUST
+│
+├── Pune + Pimpri-Chinchwad
+├── Same-day delivery where eligible
+├── Trusted sellers
+└── Marketplace benefits
+│
+FOOTER
+```
+
+This is a direction, not a requirement to blindly implement every section.
+
+Prioritize actual product discovery.
+
+---
+
+# 6. HEADER
+
+Create a strong marketplace header.
+
+Desktop should contain approximately:
+
+```text
+[Logo]
+
+Categories
+
+[ Search products, brands, materials... ]
+
+[Pincode]
+
+♡ Wishlist
+
+🛒 Cart
+
+Account / Login
+```
+
+Mobile should simplify this intelligently.
+
+Do not overcrowd mobile.
+
+---
+
+# 7. SEARCH
+
+Search should be one of the most important elements of the website.
+
+Search should support the existing API capabilities.
+
+Users should be able to search for things such as:
+
+```text
+plywood
+laminate
+sofa
+hinges
+drawer channels
+handles
+lighting
+foam
+hardware
+```
+
+Search should support:
+
+* Product name
+* Brand
+* Category
+* Relevant searchable attributes
+
+Use the existing API contract rather than creating a second search implementation.
+
+---
+
+# 8. CATEGORY DISCOVERY
+
+Categories should be prominent.
+
+Do NOT hard-code categories into React.
+
+Use the existing category API/data layer.
+
+Category cards should be visually strong and product-oriented.
+
+Example:
+
+```text
+Plywood
+Laminates
+Furniture Hardware
+Kitchen Hardware
+Wardrobe Hardware
+Furniture
+Foam & Upholstery
+Electrical
+Lighting
+Adhesives
+Tools
+...
+```
+
+The actual category list must come from the database/API.
+
+Do not invent a new permanent category taxonomy if the requirements documentation already defines it.
+
+---
+
+# 9. PRODUCT GRID
+
+The product grid is the heart of the marketplace.
+
+Product cards should clearly show:
+
+* Product image
+* Product name
+* Brand
+* Key attribute(s)
+* Price
+* Unit where applicable
+* Availability
+* Delivery/serviceability indicator where available
+* Seller/trust information where appropriate
+* Wishlist action
+* Add to cart action
+
+Example conceptual card:
+
+```text
+┌──────────────────────────┐
+│                          │
+│      PRODUCT IMAGE       │
+│                          │
+│  BEST VALUE              │
+├──────────────────────────┤
+│ Brand Name               │
+│ Premium Plywood 18mm     │
+│ BWP • 8x4 ft             │
+│                          │
+│ ₹ XXXX / sheet           │
+│                          │
+│ ✓ Available              │
+│                          │
+│ ♡          [Add to Cart] │
+└──────────────────────────┘
+```
+
+Do not display fake information merely to make the card look complete.
+
+Use the existing API data.
+
+---
+
+# 10. PRODUCT DETAIL PAGE
+
+The existing product detail functionality should be improved rather than replaced.
+
+A product page should allow a guest to understand the product completely before deciding to sign in.
+
+Include where available:
+
+* Product images
+* Product name
+* Brand
+* Price
+* Unit
+* Variants
+* Specifications
+* Attributes
+* Availability
+* Seller information
+* Delivery eligibility
+* Pincode check
+* Product description
+* FAQs
+* Related products
+
+Guest users should be able to view all public information.
+
+---
+
+# 11. PRODUCT ACTIONS
+
+Product actions should be obvious.
+
+Primary actions:
+
+```text
+[ Add to Cart ]
+[ Buy Now ]
+```
+
+Secondary:
+
+```text
+♡ Wishlist
+```
+
+For guest users:
+
+### Add to Cart
+
+Show authentication prompt.
+
+### Buy Now
+
+Show authentication prompt.
+
+### Wishlist
+
+Show authentication prompt.
+
+Do not disable these buttons without explanation.
+
+The visitor should be able to understand:
+
+> "I can buy this, but I need an account to continue."
+
+---
+
+# 12. CART ICON
+
+The cart icon can be visible to guests.
+
+If the guest clicks the cart:
+
+### If cart is empty
+
+Show:
+
+```text
+Your cart is empty.
+
+Browse products
+```
+
+### If cart data exists locally
+
+You may support a guest/local cart architecture if it fits the existing system.
+
+However, do not implement a complex guest-cart synchronization system in this phase unless the existing architecture already supports it.
+
+The important requirement is:
+
+**Do not force login merely to see an empty cart.**
+
+---
+
+# 13. WISHLIST
+
+Wishlist is account-based.
+
+Guest clicking wishlist:
+
+```text
+Sign in to save products
+```
+
+Do not silently fail.
+
+---
+
+# 14. ACCOUNT
+
+Guest account interaction should provide:
+
+```text
+Sign in
+Create account
+```
+
+Do not build the full authentication backend in this phase.
+
+Create the frontend interaction boundary so authentication can be connected later.
+
+---
+
+# 15. LOGIN PROMPT UX
+
+Create a reusable component such as:
+
+```text
+AuthRequiredModal
+```
+
+or equivalent.
+
+It should accept context such as:
+
+```text
+action = "add_to_cart"
+action = "buy_now"
+action = "wishlist"
+action = "account"
+```
+
+The message should adapt.
+
+Examples:
+
+### Add to cart
+
+> Sign in to add this product to your cart.
+
+### Wishlist
+
+> Sign in to save this product to your wishlist.
+
+### Buy now
+
+> Sign in to continue with your purchase.
+
+Do not make the user guess why login is required.
+
+---
+
+# 16. VISUAL DESIGN
+
+Keep the existing bright premium visual system.
+
+The current design direction is:
+
+### Light
+
+```text
+Warm Ivory
+#FAF9F5
+
+White
+#FFFFFF
+
+Cobalt
+#3157FF
+
+Lime
+#C8F169
+
+Charcoal
+#171717
+```
+
+Use:
+
+* Cobalt for primary actions
+* Lime selectively
+* Warm ivory as the main light background
+* White product surfaces
+* Strong product photography
+* Clean typography
+* Soft depth
+* Generous spacing
+
+The result should feel like:
+
+**A premium interior-material marketplace**
+
+rather than:
+
+**A SaaS dashboard**
+
+---
+
+# 17. DO NOT COPY FIXXLY
+
+Fixxly is only a visual inspiration.
+
+Do not copy:
+
+* Layout
+* Exact colors
+* Components
+* Branding
+* Typography
+* Content
+* Images
+
+DashDecor must have its own identity.
+
+---
+
+# 18. MOBILE EXPERIENCE
+
+Mobile browsing is extremely important.
+
+A guest should be able to:
+
+```text
+Open
+ ↓
+Browse categories
+ ↓
+Search
+ ↓
+Open product
+ ↓
+View product
+ ↓
+Attempt purchase
+ ↓
+Login prompt
+```
+
+without friction.
+
+Use mobile-friendly:
+
+* Sticky search where appropriate
+* Bottom navigation if it genuinely improves UX
+* Touch-friendly buttons
+* Product grids optimized for small screens
+* Filter sheets
+* Sort sheets
+* Responsive product images
+
+Do not simply shrink the desktop layout.
+
+---
+
+# 19. FILTERS
+
+The catalog page should support the existing filtering architecture.
+
+Where data exists, support:
+
+* Category
+* Brand
+* Price
+* Availability
+* Product attributes
+* Pincode/serviceability
+
+Filters should be:
+
+* Desktop sidebar
+* Mobile filter sheet/drawer
+
+Do not hard-code filter options.
+
+Use API-provided facets where available.
+
+---
+
+# 20. SORTING
+
+Support the existing sorting capabilities.
+
+Possible options:
+
+* Relevance
+* Price: Low to High
+* Price: High to Low
+* Newest
+* Availability
+
+Only expose sorting options that are actually supported by the current API.
+
+Do not pretend a sort mode exists if the backend does not implement it.
+
+---
+
+# 21. DELIVERY / PINCODE
+
+Keep the existing Pune + Pimpri-Chinchwad delivery eligibility capability.
+
+A guest may check delivery eligibility if the existing API allows it.
+
+Example:
+
+```text
+Deliver to
+
+[ Enter Pincode ]
+
+✓ Delivery available
+```
+
+or:
+
+```text
+Delivery not currently available
+```
+
+Do not require login merely to check public delivery eligibility.
+
+---
+
+# 22. EMPTY / ERROR STATES
+
+Create polished states for:
+
+* No search results
+* No products
+* Category with no products
+* Product unavailable
+* Delivery unavailable
+* API error
+* Loading
+* Empty cart
+* Empty wishlist
+
+Do not show generic browser errors.
+
+---
+
+# 23. PERFORMANCE
+
+This is a commerce website.
+
+Prioritize:
+
+* Fast initial render
+* Lazy loading product images
+* Responsive images
+* Avoid unnecessary API calls
+* Debounced search
+* Pagination/infinite loading where appropriate
+* Skeleton loaders
+* Avoid layout shifts
+
+Do not load the entire catalogue into the browser.
+
+Use the existing API pagination/filtering architecture.
+
+---
+
+# 24. ACCESSIBILITY
+
+Ensure:
+
+* Keyboard navigation
+* Accessible buttons
+* Proper labels
+* Focus states
+* Good contrast
+* Semantic HTML
+* Accessible modal behavior
+* Escape-to-close where appropriate
+
+---
+
+# 25. IMPORTANT ARCHITECTURAL RULE
+
+Do not implement authentication itself yet.
+
+Create the **authentication-required UX boundary**, but keep the actual authentication provider integration for the authentication phase.
+
+For now, the application can determine guest/authenticated state using a clean abstraction.
+
+For example:
+
+```text
+useAuth()
+```
+
+or an equivalent existing abstraction.
+
+Do not scatter:
+
+```text
+if (!user)
+```
+
+through dozens of components.
+
+Centralize authentication state and protected-action handling.
+
+---
+
+# 26. DO NOT CHANGE
+
+Do NOT change:
+
+* Database architecture
+* API contract unnecessarily
+* Product data model
+* Seller data model
+* Inventory architecture
+* Delivery business rules
+* Tax rules
+* Commission rules
+* B2B rules
+* Payment architecture
+* Supabase architecture
+* Existing design tokens
+
+Do not replace working functionality just for stylistic reasons.
+
+If an API change is genuinely required, explain it before making a major architectural change.
+
+---
+
+# 27. USE EXISTING DATA
+
+The current project already contains:
+
+* Products
+* Brands
+* Sellers
+* Inventory
+* Variants
+* Categories
+* Delivery eligibility
+
+Use these existing data sources.
+
+Do NOT create a second fake catalogue.
+
+Do NOT duplicate the existing API.
+
+Do NOT hard-code product cards with fake values.
+
+---
+
+# 28. ROUTES
+
+Ensure the customer experience has clean routes for at least:
+
+```text
+/
+ /catalog
+ /catalog/:category
+ /product/:slug
+ /sell
+ /business
+ /account
+ /cart
+```
+
+Adapt to the existing routing architecture if these routes already exist.
+
+Do not create duplicate routes.
+
+---
+
+# 29. ACCEPTANCE CRITERIA
+
+The phase is complete only when:
+
+### Guest browsing
+
+A completely unauthenticated visitor can:
+
+* Open homepage
+* Browse categories
+* Browse products
+* Search
+* Filter
+* Sort
+* Open product detail
+* View product information
+* Check delivery eligibility where available
+
+without being forced to log in.
+
+### Protected actions
+
+When a guest attempts:
+
+* Add to cart
+* Buy now
+* Wishlist
+* Account
+* Other account-dependent actions
+
+the user receives a clear authentication-required UI.
+
+### Intent
+
+The system preserves the intended action where technically appropriate.
+
+### Homepage
+
+The homepage clearly communicates:
+
+**"These are the things you can buy here."**
+
+Products and categories should be more prominent than generic marketing content.
+
+### Visual
+
+The website remains:
+
+* Bright
+* Premium
+* Modern
+* Interior-focused
+* Product-led
+
+### Technical
+
+* TypeScript passes
+* Build passes
+* Existing API continues working
+* No unnecessary dependencies
+* No major regressions
+* No duplicate catalogue implementation
+* No fake authentication
+* No fake payment flow
+
+---
+
+# 30. FINAL REPORT
+
+After implementation, stop.
+
+Return:
+
+## Implemented
+
+What changed.
+
+## Guest Experience
+
+What guests can do.
+
+## Protected Actions
+
+Which actions trigger login.
+
+## Files Changed
+
+Important files.
+
+## API Changes
+
+Any API changes.
+
+## Tests
+
+What was tested.
+
+## Build
+
+Whether typecheck/build passed.
+
+## Issues
+
+Any unresolved problems.
+
+## Next Phase
+
+Recommend the next phase, but DO NOT implement it automatically.
